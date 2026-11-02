@@ -56,7 +56,7 @@
   </section>
 
   <section id="subCarta" hidden>
-    <p class="nota">Cambia el precio y toca fuera del recuadro para guardar. Desmarca “Hay” cuando un plato se acabe.</p>
+    <p class="nota">Toca la foto para cambiarla. Edita nombre, descripción o precio y toca fuera del recuadro para guardar. Desmarca “Hay” cuando un plato se acabe. Los cambios se ven al instante en la app de los clientes.</p>
     <div id="editorCarta"></div>
     <details class="config">
       <summary><b>Agregar plato</b></summary>
@@ -65,7 +65,9 @@
         <label for="pDesc">Descripción</label><input id="pDesc" maxlength="120">
         <label for="pCat">Categoría</label><select id="pCat"></select>
         <label for="pPrecio">Precio (S/)</label><input id="pPrecio" type="number" step="0.5" min="0" required>
-        <label for="pFoto">Foto (enlace, opcional)</label><input id="pFoto" type="url" placeholder="https://…">
+        <label>Foto (opcional)</label>
+        <label class="foto grande" for="pFotoArchivo"><span id="pFotoVista">📷<br>Elegir foto</span></label>
+        <input id="pFotoArchivo" type="file" accept="image/*" hidden>
         <button class="btn-pri" type="submit">Agregar a la carta</button>
       </form>
     </details>

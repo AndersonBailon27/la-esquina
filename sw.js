@@ -1,6 +1,6 @@
 // Service worker: guarda los archivos de la app para que abra rápido.
 // Los datos (carta y pedidos) siempre vienen en vivo de Firebase.
-const VERSION = "la-esquina-v2";
+const VERSION = "la-esquina-v3";
 const ARCHIVOS = ["./", "./index.html", "./css/estilos.css", "./js/cliente.js", "./js/firebase.js", "./js/firebase-config.js", "./img/logo.svg", "./manifest.json"];
 
 self.addEventListener("install", e => {

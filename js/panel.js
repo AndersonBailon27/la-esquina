@@ -2,7 +2,7 @@
 import {
   db, auth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   collection, doc, onSnapshot, query, where, orderBy, Timestamp,
-  updateDoc, setDoc, addDoc, writeBatch, getDocs,
+  updateDoc, setDoc, addDoc, deleteDoc, writeBatch,
   CATEGORIAS, ESTADOS, soles, esc,
 } from "./firebase.js";
 import { CARTA_INICIAL, CONFIG_INICIAL } from "./carta-inicial.js";
@@ -114,14 +114,49 @@ function pintarCarta() {
     $("#editorCarta").innerHTML = `<div class="vacio"><b>La carta está vacía</b><br>Carga la carta de ejemplo y luego ajusta precios.<br><br><button class="btn-sec" id="btnSembrar">Cargar carta de ejemplo</button></div>`;
     return;
   }
+  // No redibujar mientras el cajero está escribiendo en un campo (se perdería lo que escribe)
+  const foco = document.activeElement;
+  if (foco && $("#editorCarta").contains(foco) && foco.matches("input:not([type=checkbox]):not([type=file])")) { redibujarCarta = true; return; }
+  redibujarCarta = false;
   $("#editorCarta").innerHTML = CATEGORIAS.map(c => {
     const items = productos.filter(p => p.categoria === c.id); if (!items.length) return "";
-    return `<h2 class="sec">${c.nombre}</h2>` + items.map(p => `<div class="editar">
-      <div class="nom">${esc(p.nombre)}<small>${esc(p.desc)}</small></div>
-      <input type="number" step="0.5" min="0" value="${p.precio}" data-precio="${p.id}" aria-label="Precio de ${esc(p.nombre)}">
-      <label class="switch"><input type="checkbox" data-disp="${p.id}" ${p.disponible === false ? "" : "checked"}> Hay</label>
+    return `<h2 class="sec">${c.nombre}</h2>` + items.map(p => `<div class="editar2">
+      <label class="foto" title="Cambiar foto">
+        ${p.foto ? `<img src="${esc(p.foto)}" alt="">` : `<span>📷<br>Foto</span>`}
+        <input type="file" accept="image/*" data-foto="${p.id}" hidden>
+      </label>
+      <div class="campos">
+        <input value="${esc(p.nombre)}" data-campo="nombre" data-id="${p.id}" maxlength="60" aria-label="Nombre del plato">
+        <input value="${esc(p.desc)}" data-campo="desc" data-id="${p.id}" maxlength="120" placeholder="Descripción" aria-label="Descripción de ${esc(p.nombre)}">
+        <div class="fila-ctrl">
+          <span class="soles">S/</span><input type="number" step="0.5" min="0" value="${p.precio}" data-precio="${p.id}" aria-label="Precio de ${esc(p.nombre)}">
+          <label class="switch"><input type="checkbox" data-disp="${p.id}" ${p.disponible === false ? "" : "checked"}> Hay</label>
+          <button class="btn-lin borrar" data-borrar="${p.id}">Eliminar</button>
+        </div>
+      </div>
     </div>`).join("");
   }).join("");
+}
+let redibujarCarta = false;
+document.addEventListener("focusout", () => { if (redibujarCarta) setTimeout(pintarCarta, 50); });
+
+// Achica la foto en el celular antes de guardarla (≈ 400 px, unos 40–80 KB)
+function comprimirFoto(archivo, lado = 480) {
+  return new Promise((ok, mal) => {
+    const url = URL.createObjectURL(archivo), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, lado / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      let q = 0.75, data = c.toDataURL("image/jpeg", q);
+      while (data.length > 200000 && q > 0.35) { q -= 0.1; data = c.toDataURL("image/jpeg", q); }
+      ok(data);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); mal(new Error("No se pudo leer la imagen")); };
+    img.src = url;
+  });
 }
 
 async function sembrar() {
@@ -148,6 +183,9 @@ document.addEventListener("click", async e => {
       b.disabled = true; await updateDoc(doc(db, "pedidos", b.dataset.rechazar), { estado: 9, motivo: b.dataset.motivo || "" });
     } else if (b.dataset.pagook) {
       b.disabled = true; await updateDoc(doc(db, "pedidos", b.dataset.pagook), { pagoEstado: "verificado", estado: 1 });
+    } else if (b.dataset.borrar) {
+      if (b.dataset.confirmar !== "1") { b.dataset.confirmar = "1"; b.textContent = "¿Seguro?"; setTimeout(() => { b.dataset.confirmar = ""; b.textContent = "Eliminar"; }, 4000); return; }
+      b.disabled = true; await deleteDoc(doc(db, "productos", b.dataset.borrar)); toast("Plato eliminado");
     } else if (b.id === "btnSembrar") {
       b.disabled = true; await sembrar();
     }
@@ -159,18 +197,36 @@ document.addEventListener("change", async e => {
   try {
     if (t.dataset.precio) { await updateDoc(doc(db, "productos", t.dataset.precio), { precio: Number(t.value) || 0 }); toast("Precio guardado"); }
     if (t.dataset.disp) { await updateDoc(doc(db, "productos", t.dataset.disp), { disponible: t.checked }); toast(t.checked ? "Disponible" : "Marcado como agotado"); }
+    if (t.dataset.campo) {
+      const v = t.value.trim();
+      if (t.dataset.campo === "nombre" && !v) { toast("El nombre no puede quedar vacío"); return; }
+      await updateDoc(doc(db, "productos", t.dataset.id), { [t.dataset.campo]: v }); toast("Guardado");
+    }
+    if (t.dataset.foto && t.files[0]) {
+      toast("Subiendo foto…");
+      const foto = await comprimirFoto(t.files[0]);
+      await updateDoc(doc(db, "productos", t.dataset.foto), { foto }); toast("Foto guardada");
+    }
+    if (t.id === "pFotoArchivo") {
+      $("#pFotoVista").innerHTML = t.files[0] ? `<img src="${URL.createObjectURL(t.files[0])}" alt="">` : "📷<br>Elegir foto";
+    }
   } catch (err) { console.error(err); toast("No se pudo guardar."); }
 });
 
 $("#formPlato").addEventListener("submit", async e => {
   e.preventDefault();
+  const btn = e.target.querySelector("button[type=submit]"); btn.disabled = true;
   try {
+    const archivo = $("#pFotoArchivo").files[0];
+    const foto = archivo ? await comprimirFoto(archivo) : "";
     await addDoc(collection(db, "productos"), {
       nombre: $("#pNombre").value.trim(), desc: $("#pDesc").value.trim(), categoria: $("#pCat").value,
-      precio: Number($("#pPrecio").value) || 0, foto: $("#pFoto").value.trim(), tag: "", disponible: true, orden: productos.length,
+      precio: Number($("#pPrecio").value) || 0, foto, tag: "", disponible: true,
+      orden: Math.max(0, ...productos.map(p => p.orden ?? 0)) + 1,
     });
-    e.target.reset(); toast("Plato agregado");
+    e.target.reset(); $("#pFotoVista").innerHTML = "📷<br>Elegir foto"; toast("Plato agregado");
   } catch (err) { console.error(err); toast("No se pudo agregar."); }
+  btn.disabled = false;
 });
 
 $("#formLocal").addEventListener("submit", async e => {
