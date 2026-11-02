@@ -1,0 +1,60 @@
+rules_version = '2';
+// Reglas de seguridad de La Esquina.
+// Para dar acceso al panel a otra persona, agrega su correo a la lista de esAdmin().
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function esAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['caja.laesquina@gmail.com'];
+    }
+
+    // Carta: todos la ven, solo el local la edita
+    match /productos/{id} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Datos del local (abierto/cerrado, envío, Yape)
+    match /config/{id} {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Pedidos
+    match /pedidos/{id} {
+      // El cliente solo puede abrir SU pedido (necesita el id, que es aleatorio); no puede listar los de otros
+      allow get: if true;
+      allow list, update, delete: if esAdmin();
+
+      // Cualquiera puede crear un pedido, pero con forma válida y siempre en estado "nuevo"
+      allow create: if request.resource.data.keys().hasOnly(
+            ['codigo', 'cliente', 'items', 'subtotal', 'envio', 'total', 'modo', 'pago', 'vuelto', 'estado', 'creado', 'pagoEstado', 'operacion'])
+        && request.resource.data.estado == 0
+        // Yape: entra "por verificar" con número de operación. Efectivo: se paga al recibir.
+        && ((request.resource.data.pago == 'yape'
+              && request.resource.data.pagoEstado == 'por_verificar'
+              && request.resource.data.operacion is string
+              && request.resource.data.operacion.size() >= 4
+              && request.resource.data.operacion.size() <= 20)
+          || (request.resource.data.pago == 'efectivo'
+              && request.resource.data.pagoEstado == 'contra_entrega'))
+        && request.resource.data.creado == request.time
+        && request.resource.data.items is list
+        && request.resource.data.items.size() > 0
+        && request.resource.data.items.size() <= 40
+        && request.resource.data.total is number
+        && request.resource.data.total > 0
+        && request.resource.data.total < 2000
+        && request.resource.data.modo in ['delivery', 'recojo']
+        && request.resource.data.pago in ['yape', 'efectivo']
+        && request.resource.data.cliente.nombre is string
+        && request.resource.data.cliente.nombre.size() > 0
+        && request.resource.data.cliente.nombre.size() <= 60
+        && request.resource.data.cliente.cel is string
+        && request.resource.data.cliente.cel.size() == 9
+        && request.resource.data.cliente.dir is string
+        && request.resource.data.cliente.dir.size() <= 200;
+    }
+  }
+}

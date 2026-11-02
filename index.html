@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La Esquina · Pollería y Chifa</title>
+<meta name="description" content="Pide pollo a la brasa y chifa de La Esquina, La Aguada, Mala. Delivery y recojo.">
+<meta name="theme-color" content="#141210">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="img/logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="hrow">
+      <img class="logo" src="img/logo.svg" alt="">
+      <div class="marca">
+        <h1>LA ESQUINA</h1>
+        <p>Pollería · Chifa · La Aguada, Mala</p>
+      </div>
+      <button class="btn-head" id="btnMiPedido" hidden>Mi pedido</button>
+    </div>
+    <div class="estado-local" id="estadoLocal"><span class="punto"></span> Cargando…</div>
+  </div>
+</header>
+<div class="aviso" id="avisoCerrado" hidden>El local está cerrado en este momento. Puedes ver la carta, pero no hacer pedidos.</div>
+
+<main class="wrap">
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <div id="carta"><p class="nota">Cargando la carta…</p></div>
+</main>
+
+<div class="barra" id="barra" hidden><button id="verCarrito"><span><span class="pill" id="nItems">0</span>Ver mi pedido</span><span id="tBarra">S/ 0.00</span></button></div>
+<div class="velo" id="velo" hidden><div class="hoja" id="hoja" role="dialog" aria-modal="true"></div></div>
+
+<script type="module" src="js/cliente.js"></script>
+<script>
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

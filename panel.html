@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panel · La Esquina</title>
+<meta name="theme-color" content="#141210">
+<meta name="robots" content="noindex">
+<link rel="icon" href="img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="hrow">
+      <img class="logo" src="img/logo.svg" alt="">
+      <div class="marca">
+        <h1>LA ESQUINA</h1>
+        <p>Panel del local</p>
+      </div>
+      <button class="btn-head" id="btnSonido" hidden>🔔 Activar sonido</button>
+      <button class="btn-head" id="btnSalir" hidden>Salir</button>
+    </div>
+  </div>
+</header>
+
+<!-- Login -->
+<main id="vistaLogin" class="wrap" hidden>
+  <form class="login" id="formLogin">
+    <h2>Ingresar</h2>
+    <p class="nota">Solo para el personal de La Esquina.</p>
+    <label for="lCorreo">Correo</label><input id="lCorreo" type="email" autocomplete="username" required>
+    <label for="lClave">Contraseña</label><input id="lClave" type="password" autocomplete="current-password" required>
+    <div class="error" id="lError" hidden></div>
+    <button class="btn-pri" type="submit">Ingresar</button>
+  </form>
+</main>
+
+<!-- Panel -->
+<main id="vistaPanel" class="wrap panel" hidden>
+  <div class="subtabs">
+    <button class="tab" aria-selected="true" data-sub="pedidos">Pedidos</button>
+    <button class="tab" aria-selected="false" data-sub="carta">Carta</button>
+    <button class="tab" aria-selected="false" data-sub="local">Local</button>
+  </div>
+
+  <section id="subPedidos">
+    <div class="kpis">
+      <div class="kpi"><b id="kNuevos">0</b><span>Nuevos</span></div>
+      <div class="kpi"><b id="kActivos">0</b><span>En curso</span></div>
+      <div class="kpi"><b id="kVentas">S/ 0</b><span>Vendido hoy</span></div>
+    </div>
+    <div id="pedidos"><p class="nota">Cargando pedidos…</p></div>
+  </section>
+
+  <section id="subCarta" hidden>
+    <p class="nota">Cambia el precio y toca fuera del recuadro para guardar. Desmarca “Hay” cuando un plato se acabe.</p>
+    <div id="editorCarta"></div>
+    <details class="config">
+      <summary><b>Agregar plato</b></summary>
+      <form id="formPlato">
+        <label for="pNombre">Nombre</label><input id="pNombre" required maxlength="60">
+        <label for="pDesc">Descripción</label><input id="pDesc" maxlength="120">
+        <label for="pCat">Categoría</label><select id="pCat"></select>
+        <label for="pPrecio">Precio (S/)</label><input id="pPrecio" type="number" step="0.5" min="0" required>
+        <label for="pFoto">Foto (enlace, opcional)</label><input id="pFoto" type="url" placeholder="https://…">
+        <button class="btn-pri" type="submit">Agregar a la carta</button>
+      </form>
+    </details>
+  </section>
+
+  <section id="subLocal" hidden>
+    <form class="config" id="formLocal">
+      <label class="switch"><input type="checkbox" id="cAbierto"> Local abierto (recibe pedidos)</label>
+      <label for="cEnvio">Costo de envío (S/)</label><input id="cEnvio" type="number" step="0.5" min="0">
+      <label for="cYape">Número de Yape / Plin</label><input id="cYape" maxlength="20">
+      <label for="cWsp">WhatsApp del local</label><input id="cWsp" maxlength="20">
+      <label for="cHorario">Horario</label><input id="cHorario" maxlength="80">
+      <button class="btn-pri" type="submit">Guardar</button>
+    </form>
+  </section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+<script type="module" src="js/panel.js"></script>
+</body>
+</html>
